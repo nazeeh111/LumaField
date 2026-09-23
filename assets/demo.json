@@ -1,0 +1,9 @@
+{
+  "name": "Meridian Pavilion",
+  "kind": "Seeded procedural architecture",
+  "seed": 4309,
+  "splats": 51372,
+  "bytes": 1643904,
+  "generator": "scripts/generate-demo.mjs",
+  "rights": "Original procedural geometry and colors; no photographs or external media."
+}
