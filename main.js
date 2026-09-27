@@ -11,11 +11,11 @@ function lookAtCamera(position, target, focal = 800) {
 let cameras = [lookAtCamera([7,-5,-9],[0,-1.5,0])];
 let camera = cameras[0];
 const byId = id => document.getElementById(id);
-function showError(error) {
+function showError(error, status = 'Could not open scene') {
     byId('spinner').style.display='none';
     byId('message').textContent=error.message || String(error);
     byId('message').hidden=false;
-    byId('status').textContent='Could not open scene';
+    byId('status').textContent=status;
     byId('progress').style.display='none';
 }
 function download(buffer, filename) {
@@ -162,6 +162,20 @@ function translate4(a, x, y, z) {
     ];
 }
 
+function orbitViewMatrix(view, center, angle) {
+    const cameraToWorld = invert4(view);
+    const cosine = Math.cos(angle), sine = Math.sin(angle);
+    for (const i of [0, 4, 8]) {
+        const x = cameraToWorld[i], z = cameraToWorld[i + 2];
+        cameraToWorld[i] = cosine * x + sine * z;
+        cameraToWorld[i + 2] = -sine * x + cosine * z;
+    }
+    const x = cameraToWorld[12] - center[0], z = cameraToWorld[14] - center[2];
+    cameraToWorld[12] = center[0] + cosine * x + sine * z;
+    cameraToWorld[14] = center[2] - sine * x + cosine * z;
+    return invert4(cameraToWorld);
+}
+
 const vertexShaderSource = `
 #version 300 es
 precision highp float;
@@ -257,7 +271,11 @@ async function main() {
     const worker = new Worker(new URL('./worker.js', import.meta.url), {type:'module'});
     let requestId=0, activeSceneId=0, pendingScene=null, fetchController=null;
     let cameraRequestId=0;
+    let cameraViewsLoaded=false;
+    let currentLibraryId='pavilion';
+    let currentSceneSource='bundled';
     let fittedCamera=camera;
+    let sceneCenter=[0,-1.5,0];
     let sceneFilename='meridian.splat';
     worker.onerror=()=>showError(new Error('The scene worker stopped. Reload the page and try a smaller scene.'));
 
@@ -357,12 +375,48 @@ async function main() {
     window.addEventListener("resize", resize);
     resize();
 
+    function updateCameraNavigator() {
+        byId('camera-nav').hidden=!cameraViewsLoaded;
+        byId('camera-description').textContent=cameraViewsLoaded
+            ? `${cameras.length.toLocaleString()} calibrated ${cameras.length===1?'view':'views'} loaded`
+            : 'Load cameras.json to step through calibrated views.';
+        byId('camera-index').max=String(cameras.length);
+        byId('camera-index').value=currentCameraIndex<0?'':String(currentCameraIndex+1);
+        byId('camera-total').textContent=`of ${cameras.length.toLocaleString()}`;
+        byId('camera-position').textContent=currentCameraIndex<0
+            ? 'Free view'
+            : `Camera ${currentCameraIndex+1} of ${cameras.length}`;
+        byId('camera-prev').disabled=!cameraViewsLoaded || cameras.length<2;
+        byId('camera-next').disabled=!cameraViewsLoaded || cameras.length<2;
+    }
+
+    function markFreeView() {
+        if(!cameraViewsLoaded || currentCameraIndex<0)return;
+        currentCameraIndex=-1;
+        camid.textContent='Free view';
+        updateCameraNavigator();
+    }
+
+    function selectCameraIndex(index) {
+        if(!cameraViewsLoaded || !cameras.length)return;
+        currentCameraIndex=(index+cameras.length)%cameras.length;
+        camera=cameras[currentCameraIndex];
+        viewMatrix=getViewMatrix(camera);
+        carousel=false;
+        resize();
+        camid.textContent=`Camera ${currentCameraIndex+1}`;
+        updateCameraNavigator();
+    }
+
     function fitScene(buffer) {
         const f=new Float32Array(buffer), lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
         for(let i=0;i<f.length;i+=8) for(let k=0;k<3;k++){lo[k]=Math.min(lo[k],f[i+k]);hi[k]=Math.max(hi[k],f[i+k]);}
         const center=lo.map((n,k)=>(n+hi[k])/2), radius=Math.max(0.5,Math.hypot(...hi.map((n,k)=>n-lo[k]))/2);
+        sceneCenter=center;
         const pos=center.map((n,k)=>n+[1.25,-.7,-1.7][k]*radius);
         camera=lookAtCamera(pos,center);fittedCamera=camera;cameras=[camera];currentCameraIndex=0;
+        cameraViewsLoaded=false;
+        updateCameraNavigator();
         defaultViewMatrix=getViewMatrix(camera);
         const matchesSavedScene=!params.get('viewScene') || params.get('viewScene')===sceneFilename;
         viewMatrix=matchesSavedScene && savedView ? savedView : defaultViewMatrix.slice();
@@ -379,8 +433,16 @@ async function main() {
             byId('scene-name').textContent=pendingScene.name;
             byId('viewport-name').textContent=pendingScene.name.replace(/\.(splat|ply)$/i,'');
             const libraryId=pendingScene.libraryId || '';
+            currentLibraryId=libraryId;
+            currentSceneSource=pendingScene.source || (libraryId?'bundled':'local');
             byId('scene-select').value=libraryId;
+            byId('custom-scene-option').textContent=currentSceneSource==='remote'?'Remote scene':'Local scene';
             byId('demo-button').setAttribute('aria-pressed',String(libraryId==='pavilion'));
+            byId('houseplant-button').setAttribute('aria-pressed',String(libraryId==='houseplant'));
+            byId('scene-type-label').textContent=libraryId==='houseplant'?'PHOTOGRAPHIC CAPTURE':libraryId==='pavilion'?'PROCEDURAL SCENE':currentSceneSource==='remote'?'REMOTE SCENE':'LOCAL SCENE';
+            byId('save-label').textContent=currentSceneSource==='local'?'Save view':'Copy link';
+            byId('save-button').setAttribute('aria-label',currentSceneSource==='local'?'Save view for local file':'Copy view link');
+            byId('view-feedback').hidden=true;
             byId('scene-credit').hidden=libraryId!=='houseplant';
             byId('asset-license').hidden=libraryId!=='houseplant';
             byId('asset-details').textContent=libraryId==='houseplant'
@@ -394,6 +456,13 @@ async function main() {
                 if(libraryId==='pavilion')url.searchParams.delete('scene');
                 else url.searchParams.set('scene',libraryId);
                 if(!pendingScene.preserveView) {url.searchParams.delete('viewScene');url.hash='';savedView=null;}
+                history.replaceState(null,'',url);
+            } else if(currentSceneSource==='local') {
+                const url=new URL(location.href);
+                const viewScene=url.searchParams.get('viewScene');
+                url.searchParams.delete('url');
+                url.searchParams.delete('scene');
+                if(viewScene && viewScene!==sceneFilename) {url.searchParams.delete('viewScene');url.hash='';savedView=null;}
                 history.replaceState(null,'',url);
             }
             byId('scene-kind').textContent=pendingScene.kind;
@@ -449,31 +518,25 @@ async function main() {
     window.addEventListener("keydown", (e) => {
         if(e.target.closest('button, input, a, select, textarea')) return;
         if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
-        carousel = false;
+        if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyA','KeyD','KeyQ','KeyE','KeyW','KeyS','KeyI','KeyJ','KeyK','KeyL'].includes(e.code))markFreeView();
+        if (e.code !== "KeyP") carousel = false;
         if (!activeKeys.includes(e.code)) activeKeys.push(e.code);
-        if (/^[0-9]$/.test(e.key) && cameras[Number(e.key)]) {
-            currentCameraIndex = parseInt(e.key);
-            camera = cameras[currentCameraIndex];
-            viewMatrix = getViewMatrix(camera);
-            resize();
+        if (cameraViewsLoaded && /^[0-9]$/.test(e.key)) {
+            const number=e.key==='0'?10:Number(e.key);
+            if(cameras[number-1])selectCameraIndex(number-1);
         }
-        if (["-", "_"].includes(e.key)) {
-            currentCameraIndex =
-                (currentCameraIndex + cameras.length - 1) % cameras.length;
-            camera=cameras[currentCameraIndex];
-            viewMatrix = getViewMatrix(camera);resize();
+        if (cameraViewsLoaded && ["-", "_"].includes(e.key)) {
+            selectCameraIndex(currentCameraIndex<0?cameras.length-1:currentCameraIndex-1);
         }
-        if (["+", "="].includes(e.key)) {
-            currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
-            camera=cameras[currentCameraIndex];
-            viewMatrix = getViewMatrix(camera);resize();
+        if (cameraViewsLoaded && ["+", "="].includes(e.key)) {
+            selectCameraIndex(currentCameraIndex+1);
         }
-        camid.innerText = "cam  " + currentCameraIndex;
         if (e.code == "KeyV") {
             saveCurrentView();
         } else if (e.code === "KeyP") {
+            if (!carousel) orbitBaseView = null;
             carousel = true;
-            camid.innerText = "";
+            markFreeView();
         }
     });
     window.addEventListener("keyup", (e) => {
@@ -488,6 +551,7 @@ async function main() {
         (e) => {
             carousel = false;
             e.preventDefault();
+            markFreeView();
             const lineHeight = 10;
             const scale =
                 e.deltaMode == 1
@@ -546,6 +610,7 @@ async function main() {
     canvas.addEventListener("mousemove", (e) => {
         e.preventDefault();
         if (down == 1) {
+            if(e.clientX!==startX || e.clientY!==startY)markFreeView();
             let inv = invert4(viewMatrix);
             let dx = (5 * (e.clientX - startX)) / canvas.clientWidth;
             let dy = (5 * (e.clientY - startY)) / canvas.clientHeight;
@@ -563,6 +628,7 @@ async function main() {
             startX = e.clientX;
             startY = e.clientY;
         } else if (down == 2) {
+            if(e.clientX!==startX || e.clientY!==startY)markFreeView();
             let inv = invert4(viewMatrix);
             // inv = rotateY(inv, );
             // let preY = inv[13];
@@ -614,6 +680,7 @@ async function main() {
         (e) => {
             e.preventDefault();
             if (e.touches.length === 1 && down) {
+                markFreeView();
                 let inv = invert4(viewMatrix);
                 let dx = (4 * (e.touches[0].clientX - startX)) / canvas.clientWidth;
                 let dy = (4 * (e.touches[0].clientY - startY)) / canvas.clientHeight;
@@ -631,6 +698,7 @@ async function main() {
                 startX = e.touches[0].clientX;
                 startY = e.touches[0].clientY;
             } else if (e.touches.length === 2) {
+                markFreeView();
                 // alert('beep')
                 const dtheta =
                     Math.atan2(startY - altY, startX - altX) -
@@ -690,7 +758,8 @@ async function main() {
 
     let lastFrame = 0;
     let avgFps = 0;
-    let start = 0;
+    let orbitBaseView = null;
+    let orbitStart = 0;
 
     window.addEventListener("gamepadconnected", (e) => {
         const gp = navigator.getGamepads()[e.gamepad.index];
@@ -705,6 +774,7 @@ async function main() {
     let leftGamepadTrigger, rightGamepadTrigger;
 
     const frame = (now) => {
+        const frameTime = Number.isFinite(now) ? now : performance.now();
         let inv = invert4(viewMatrix);
         let shiftKey =
             activeKeys.includes("Shift") ||
@@ -746,6 +816,8 @@ async function main() {
             const axisThreshold = 0.1; // Threshold to detect when the axis is intentionally moved
             const moveSpeed = 0.06;
             const rotateSpeed = 0.02;
+            if(gamepad.axes.some(axis=>Math.abs(axis)>axisThreshold)
+                || [0,6,7,12,13,14,15].some(index=>gamepad.buttons[index].pressed))markFreeView();
 
             // Assuming the left stick controls translation (axes 0 and 1)
             if (Math.abs(gamepad.axes[0]) > axisThreshold) {
@@ -796,17 +868,14 @@ async function main() {
                 carousel = false;
             }
             if (gamepad.buttons[4].pressed && !leftGamepadTrigger) {
-                camera =
-                    cameras[(cameras.indexOf(camera) + 1) % cameras.length];
+                if(cameraViewsLoaded)selectCameraIndex(currentCameraIndex+1);
+                else camera=cameras[(cameras.indexOf(camera)+1)%cameras.length];
                 inv = invert4(getViewMatrix(camera));
                 carousel = false;
             }
             if (gamepad.buttons[5].pressed && !rightGamepadTrigger) {
-                camera =
-                    cameras[
-                        (cameras.indexOf(camera) + cameras.length - 1) %
-                            cameras.length
-                    ];
+                if(cameraViewsLoaded)selectCameraIndex(currentCameraIndex<0?cameras.length-1:currentCameraIndex-1);
+                else camera=cameras[(cameras.indexOf(camera)+cameras.length-1)%cameras.length];
                 inv = invert4(getViewMatrix(camera));
                 carousel = false;
             }
@@ -817,7 +886,9 @@ async function main() {
                 carousel = false;
             }
             if (gamepad.buttons[3].pressed) {
+                if (!carousel) orbitBaseView = null;
                 carousel = true;
+                markFreeView();
             }
         }
 
@@ -854,13 +925,14 @@ async function main() {
         viewMatrix = invert4(inv);
 
         if (carousel) {
-            let inv = invert4(defaultViewMatrix);
-
-            const t = Math.sin((Date.now() - start) / 5000);
-            inv = translate4(inv, 2.5 * t, 0, 6 * (1 - Math.cos(t)));
-            inv = rotate4(inv, -0.6 * t, 0, 1, 0);
-
-            viewMatrix = invert4(inv);
+            if (!orbitBaseView) {
+                orbitBaseView = viewMatrix.slice();
+                orbitStart = frameTime;
+            }
+            const angle = ((frameTime - orbitStart) * 0.00018) % (2 * Math.PI);
+            viewMatrix = orbitViewMatrix(orbitBaseView, sceneCenter, angle);
+        } else {
+            orbitBaseView = null;
         }
 
         if (isJumping) {
@@ -887,8 +959,6 @@ async function main() {
             gl.drawArraysInstanced(gl.TRIANGLE_FAN, 0, 4, vertexCount);
         } else {
             gl.clear(gl.COLOR_BUFFER_BIT);
-
-            start = Date.now() + 2000;
         }
         byId('orbit-button').setAttribute('aria-pressed', String(carousel));
         fps.innerText = Math.round(avgFps) + " fps";
@@ -927,27 +997,34 @@ async function main() {
             loadBuffer(buffer,name,kind,id,options);
         } catch(error) {if(id===requestId&&error.name!=='AbortError')showError(error);}
     };
-    const selectFile = async (file) => {
+    const selectCameraFile = async (file) => {
         if(!file)return;
-        if(/\.json$/i.test(file.name)) {
-            const cameraId=++cameraRequestId, sceneRequest=requestId;
-            try {
-                if(file.size>4*1024*1024)throw new Error('Camera JSON exceeds the 4 MiB limit.');
-                const parsed=validateCameras(JSON.parse(await file.text()));
-                if(cameraId!==cameraRequestId || sceneRequest!==requestId)return;
-                cameras=parsed;camera=cameras[0];currentCameraIndex=0;
-                viewMatrix=getViewMatrix(camera);carousel=false;resize();byId('camid').textContent='Camera 0';
-                byId('status').textContent=`${cameras.length} camera views loaded`;byId('message').hidden=true;
-            } catch(error) {if(cameraId===cameraRequestId&&sceneRequest===requestId)showError(error);}
-            return;
+        const cameraId=++cameraRequestId, sceneRequest=requestId;
+        try {
+            if(!/\.json$/i.test(file.name))throw new Error('Choose a cameras.json file.');
+            if(file.size>4*1024*1024)throw new Error('Camera JSON exceeds the 4 MiB limit.');
+            const parsed=validateCameras(JSON.parse(await file.text()));
+            if(cameraId!==cameraRequestId || sceneRequest!==requestId)return;
+            cameras=parsed;cameraViewsLoaded=true;
+            selectCameraIndex(0);
+            byId('status').textContent=`${cameras.length.toLocaleString()} camera ${cameras.length===1?'view':'views'} loaded`;
+            byId('message').hidden=true;
+        } catch(error) {
+            if(cameraId===cameraRequestId&&sceneRequest===requestId)showError(error,'Could not load camera views');
         }
+    };
+    const selectSceneFile = async (file) => {
+        if(!file)return;
         const id=beginLoad();
         try {
-            if(!/\.(splat|ply)$/i.test(file.name))throw new Error('Choose a .splat, binary .ply, or cameras.json file.');
+            if(!/\.(splat|ply)$/i.test(file.name))throw new Error('Choose a .splat or binary .ply scene file.');
             if(file.size>MAX_BYTES)throw new Error('Scene exceeds the 128 MiB file limit.');
-            loadBuffer(await file.arrayBuffer(),file.name,'Local scene · stays on your device',id);
+            loadBuffer(await file.arrayBuffer(),file.name,'Local scene · stays on your device',id,{source:'local'});
         } catch(error) {if(id===requestId)showError(error);}
     };
+    const selectDroppedFile = file => /\.json$/i.test(file?.name || '')
+        ? selectCameraFile(file)
+        : selectSceneFile(file);
     const library = {
         pavilion: {file:'./assets/meridian.splat',name:'Meridian Pavilion',kind:'Original procedural architecture'},
         houseplant: {file:'./assets/captures/houseplant.splat',name:'Houseplant',kind:'Photographic capture · Marcel Padilla'}
@@ -955,39 +1032,75 @@ async function main() {
     const loadLibrary = (id, preserveView=false) => {
         const selected=library[id];
         if(!selected)return;
-        return loadRemote(new URL(selected.file,import.meta.url),selected.name,selected.kind,{libraryId:id,preserveView});
+        return loadRemote(new URL(selected.file,import.meta.url),selected.name,selected.kind,{libraryId:id,source:'bundled',preserveView});
     };
     byId('demo-button').onclick=()=>loadLibrary('pavilion');
-    byId('scene-select').onchange=e=>loadLibrary(e.target.value);
+    byId('houseplant-button').onclick=()=>loadLibrary('houseplant');
+    byId('scene-select').onchange=e=>{
+        const selected=e.target.value;
+        e.target.value=currentLibraryId;
+        loadLibrary(selected);
+    };
     byId('import-button').onclick=()=>byId('file-input').click();
     byId('mobile-import').onclick=()=>byId('file-input').click();
-    byId('camera-button').onclick=()=>byId('file-input').click();
-    byId('file-input').onchange=e=>{selectFile(e.target.files[0]);e.target.value='';};
-    byId('reset-button').onclick=()=>{camera=fittedCamera;viewMatrix=defaultViewMatrix.slice();resize();carousel=false;byId('camid').textContent='Free view';};
-    byId('orbit-button').onclick=()=>{carousel=!carousel;start=Date.now();};
-    function saveCurrentView() {
+    byId('camera-button').onclick=()=>byId('camera-file-input').click();
+    byId('file-input').onchange=e=>{selectSceneFile(e.target.files[0]);e.target.value='';};
+    byId('camera-file-input').onchange=e=>{selectCameraFile(e.target.files[0]);e.target.value='';};
+    byId('camera-prev').onclick=()=>selectCameraIndex(currentCameraIndex<0?cameras.length-1:currentCameraIndex-1);
+    byId('camera-next').onclick=()=>selectCameraIndex(currentCameraIndex+1);
+    byId('camera-index').oninput=e=>{
+        const number=Number(e.target.value);
+        if(e.target.value!=='' && Number.isInteger(number) && number>=1 && number<=cameras.length)selectCameraIndex(number-1);
+    };
+    byId('camera-index').onchange=e=>{
+        const number=Number(e.target.value);
+        if(Number.isInteger(number) && number>=1 && number<=cameras.length)selectCameraIndex(number-1);
+        else {
+            byId('camera-description').textContent=`Enter a camera number from 1 to ${cameras.length.toLocaleString()}.`;
+            e.target.value=currentCameraIndex<0?'':String(currentCameraIndex+1);
+        }
+    };
+    byId('reset-button').onclick=()=>{camera=fittedCamera;viewMatrix=defaultViewMatrix.slice();resize();carousel=false;currentCameraIndex=cameraViewsLoaded?-1:0;byId('camid').textContent='Free view';updateCameraNavigator();};
+    byId('orbit-button').onclick=()=>{carousel=!carousel;orbitBaseView=null;if(carousel)markFreeView();};
+    async function saveCurrentView() {
         const url=new URL(location.href);
         url.searchParams.set('viewScene',sceneFilename);
         url.hash=JSON.stringify(viewMatrix.map(n=>Math.round(n*10000)/10000));
         history.replaceState(null,'',url);
-        byId('status').textContent='View saved in URL · local scenes must be reopened';
+        byId('view-feedback').hidden=false;
+        byId('view-link').hidden=true;
+        if(currentSceneSource==='local') {
+            byId('view-feedback-text').textContent=`View saved in this URL. Reopen ${sceneFilename} to restore it; the file is not included in the link.`;
+            return;
+        }
+        try {
+            if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');
+            await navigator.clipboard.writeText(url.toString());
+            byId('view-feedback-text').textContent=`View link copied. It opens this ${currentSceneSource==='remote'?'remote':'bundled'} scene and camera angle.`;
+        } catch {
+            byId('view-feedback-text').textContent=`View saved in URL. Copy the link below to share this ${currentSceneSource==='remote'?'remote':'bundled'} scene and camera angle.`;
+            byId('view-link').value=url.toString();
+            byId('view-link').hidden=false;
+            byId('view-link').focus?.();
+            byId('view-link').select?.();
+        }
     }
     byId('save-button').onclick=saveCurrentView;
     byId('download-button').onclick=()=>{if(splatData.length)download(splatData,sceneFilename);};
     byId('help-button').onclick=()=>{const show=byId('help-panel').hidden;byId('help-panel').hidden=!show;byId('help-button').setAttribute('aria-expanded',String(show));};
     window.addEventListener('hashchange',()=>{
-        try {viewMatrix=validateView(JSON.parse(decodeURIComponent(location.hash.slice(1))));carousel=false;}
+        try {viewMatrix=validateView(JSON.parse(decodeURIComponent(location.hash.slice(1))));carousel=false;markFreeView();}
         catch(error) {showError(error);}
     });
     let dragDepth=0;
     document.addEventListener('dragenter',e=>{e.preventDefault();if(e.dataTransfer.types.includes('Files')){dragDepth++;document.body.classList.add('dragging');}});
     document.addEventListener('dragover',e=>e.preventDefault());
     document.addEventListener('dragleave',e=>{e.preventDefault();if(--dragDepth<=0){dragDepth=0;document.body.classList.remove('dragging');}});
-    document.addEventListener('drop',e=>{e.preventDefault();dragDepth=0;document.body.classList.remove('dragging');selectFile(e.dataTransfer.files[0]);});
+    document.addEventListener('drop',e=>{e.preventDefault();dragDepth=0;document.body.classList.remove('dragging');selectDroppedFile(e.dataTransfer.files[0]);});
     if(params.has('url')) {
         const url=new URL(params.get('url'),location.href);
         if(!['http:','https:'].includes(url.protocol))throw new Error('Remote scene URL must use HTTP or HTTPS.');
-        await loadRemote(url,decodeURIComponent(url.pathname.split('/').pop())||'Remote scene','Remote scene · '+url.hostname);
+        await loadRemote(url,decodeURIComponent(url.pathname.split('/').pop())||'Remote scene','Remote scene · '+url.hostname,{source:'remote'});
     } else await loadLibrary(params.get('scene')==='houseplant'?'houseplant':'pavilion',true);
 
 }

@@ -30,23 +30,25 @@ when that capability is unavailable.
 
 ## Explore
 
-Use the **Scene** selector above the viewport to switch between Meridian Pavilion
-and Houseplant. The selected bundled scene is retained in the URL for reloads.
+Choose Meridian Pavilion or Houseplant from the desktop scene library, or use the
+**Scene** selector on a narrow screen. The selected bundled scene is retained in
+the URL for reloads.
 Houseplant is 3.47 MiB with 113,648 splats. Author and license links appear in the
 viewport and under **Controls → Scene details**; full provenance is in
 [THIRD_PARTY.md](THIRD_PARTY.md).
 
-- **Open a scene** or drag a `.splat`/`.ply` file into the viewer. Files stay in the browser.
-- **Reset view** fits the current scene. **Auto orbit** animates the viewpoint.
-- **Save view** stores the camera matrix in the URL hash. For local files, reopen the same file before using the saved view; the URL never embeds your model.
-- **Download splat** exports the current scene, including a converted PLY.
-- Open **Controls → Load camera JSON** for an array of calibrated camera views.
+- **Open a scene file** or drag a `.splat`/`.ply` file into the viewer. Files stay in the browser.
+- **Reset** fits the current scene. **Orbit** circles the scene from the current viewpoint.
+- **Copy link** stores the view in the URL and copies a link for a bundled scene. If clipboard access is unavailable, a selectable link appears. For local files, **Save view** stores the camera in the URL; reopen the same file to restore it because the URL never embeds your model.
+- **Export splat** downloads the current scene, including a converted PLY.
+- **Load camera JSON** in the visible camera bar to load calibrated views. Step with its arrows or enter a camera number from 1 to the full set size. Keyboard `1`–`9` selects views 1–9; `0` selects view 10; `+` and `-` step through all views. Manual navigation returns to Free view.
 - Drag to orbit, right-drag to move, scroll to orbit, or Ctrl-scroll to zoom. Touch, keyboard and standard gamepad controls are retained; the in-app help lists them.
 
 A remote CORS-enabled scene can be opened with `?url=https://example.org/scene.splat`.
 Remote requests omit credentials. Content-Length is optional; actual streamed
 bytes are bounded before scene conversion. Local import cancels a pending fetch.
-Invalid imports leave the previously loaded scene available.
+Invalid imports leave the previously loaded scene available. A copied view link
+for a remote scene depends on that remote file remaining available.
 
 ## Supported formats and limits
 

@@ -4,7 +4,7 @@
 
 The implementation was exercised with Node 24.14.0 using `npm test`,
 `node --check main.js`, `node --check worker.js`, and `npm run build`.
-All 24 tests passed. The suite uses Node's built-in runner and actual parser/worker code, not mocked conversion output. Integration regressions evaluate production main.js with minimal DOM/WebGL surfaces and real buffer transfer semantics. These cover state changes, not GPU pixels; browser/GPU verification is a separate step.
+All 31 tests passed on 27 September 2026. The suite uses Node's built-in runner and actual parser/worker code, not mocked conversion output. Integration regressions evaluate production main.js with minimal DOM/WebGL surfaces and real buffer transfer semantics. These cover state changes, not GPU pixels; browser/GPU verification is a separate step.
 
 The original source was inspected at
 `ba182b51b7c2ad5738cdd6741cd63336d27470fb`. Direct execution reproduced its
@@ -26,6 +26,12 @@ LumaField draft: out-of-order camera JSON completion, stale focal lengths after
 Reset view, and worker/UI divergence after stale accepted import plus newer
 failed import. Generation guards, restoring the fitted camera, and explicit
 worker activation address those cases. The independent reviewer reran all three production integration scenarios and confirmed the fixes. A fourth regression verifies that a saved local-scene view survives the initial demo load and is restored when the matching file is reopened. Keyboard V and the Save view button share the same path.
+
+The current integration checks also cover continuous auto orbit from the active view, frame-cadence independence, camera navigation beyond ten views, numbered keyboard shortcuts, Free view after an external view hash, invalid camera JSON preserving the active scene and camera set, a selectable view-link fallback without clipboard access, remote-versus-local save wording, and failed or stale bundled scene requests leaving the scene selector truthful.
+
+## Browser workspace check
+
+The local app was served over HTTP from source and opened in Chrome at desktop and 390×844 widths. Both bundled scenes rendered with the correct selection and Houseplant attribution. On the narrow layout, a real 12-view camera JSON loaded through the visible camera action; direct entry of `12` selected Camera 12 of 12, and starting Orbit changed the camera label to Free view. The mobile toolbar kept readable action labels. This browser pass verifies the observed render and controls on this machine, not other GPUs or devices. Clipboard writing was not exercised in the browser; the no-clipboard selectable-link path passed in the integration harness.
 
 ## Reproducible data
 

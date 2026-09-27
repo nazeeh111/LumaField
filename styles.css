@@ -11,3 +11,57 @@
 .asset-about{border-top:1px solid var(--line);padding-top:14px;margin-top:15px}.asset-about h3{font:14px -apple-system,sans-serif;margin-bottom:8px}.asset-about a{font-size:10px;color:var(--copper);text-decoration:underline;text-underline-offset:3px}
 .help-panel{max-height:calc(100% - 160px);overflow:auto}.stage-tags{align-items:flex-start;gap:16px}.stage-tags>span:first-of-type{display:none}
 @media(max-width:760px){.stage-bar>span{max-width:110px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.stage-tags{gap:9px}.scene-picker>span{display:none}.scene-picker select{max-width:138px;padding-right:15px;font-size:10px}.stage-tags #fps{display:none}.viewport-title{max-width:235px}.help-panel{max-height:calc(100% - 155px)}}
+
+/* Scene selection and camera work stay visible without competing with the canvas. */
+.sidebar{gap:19px}
+.scene-library{display:grid;gap:8px}
+.scene-library .scene-card{display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:start;gap:10px;width:100%;min-height:74px;padding:13px;text-align:left;background:#252b29;border:1px solid var(--line);border-radius:6px}
+.scene-library .scene-card:hover{background:#2d3530;border-color:#7f8b7e}
+.scene-library .scene-card[aria-pressed=true]{border-color:var(--copper);background:#30332e}
+.scene-card-index{color:var(--copper);font-size:10px;line-height:1.4;font-variant-numeric:tabular-nums}
+.scene-card-copy{display:grid;gap:6px;min-width:0}
+.scene-card-copy strong{font-size:12px;font-weight:600}
+.scene-card-copy small{margin:0;font-size:10px;line-height:1.35;letter-spacing:0;color:var(--muted)}
+.scene-card-action{font-size:10px;color:var(--muted);white-space:nowrap}
+.scene-library .scene-card[aria-pressed=true] .scene-card-action{color:var(--copper)}
+.import-box{padding-bottom:18px}
+.scene-picker{display:none}
+.camera-bar{min-height:58px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}
+.camera-bar-intro{display:grid;gap:4px;min-width:0}
+.camera-bar-intro strong{font-size:11px;font-weight:600}
+.camera-bar-intro span{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.camera-bar-actions,.camera-nav{display:flex;align-items:center;gap:8px}
+.camera-nav[hidden]{display:none}
+.camera-bar button{border:1px solid #596452;background:#242b26;border-radius:4px;padding:7px 9px;color:var(--paper);font-size:10px;white-space:nowrap}
+.camera-bar button:hover{border-color:var(--copper)}
+.camera-nav button{font-size:15px;line-height:1;padding:5px 9px}
+.camera-nav span{min-width:50px;text-align:center;font-size:10px;font-variant-numeric:tabular-nums}
+.camera-index-label input{width:48px;padding:5px 3px;background:#19221e;border:1px solid #66786a;border-radius:4px;color:var(--paper);font:11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:center;font-variant-numeric:tabular-nums}
+.camera-index-label input:focus-visible{outline:2px solid var(--copper);outline-offset:2px}
+#camera-total{min-width:35px;text-align:left}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.view-feedback{position:absolute;z-index:7;right:26px;bottom:174px;max-width:min(390px,calc(100% - 52px));display:grid;gap:8px;padding:12px 14px;background:#27322d;border:1px solid #73927c;border-radius:6px;box-shadow:0 10px 30px #0006;font-size:11px;line-height:1.5}
+.view-feedback[hidden],.view-feedback input[hidden]{display:none}
+.view-feedback input{width:100%;padding:7px 8px;background:#19201d;border:1px solid #667a68;border-radius:3px;color:var(--paper);font:10px monospace}
+.control-bar .control-icon{display:inline-block;min-width:16px;text-align:center;font-size:16px}
+.help-panel{bottom:174px}
+@media(max-width:760px){
+  .scene-picker{display:flex}
+  .camera-bar{min-height:58px}
+  .camera-bar-intro span{display:none}
+  .camera-bar-actions{gap:5px}
+  .camera-bar button{padding:7px;font-size:9px}
+  .camera-nav{gap:4px}
+  .camera-nav button{font-size:14px;padding:5px 7px}
+  .camera-nav span{min-width:42px;font-size:9px}
+  .camera-index-label input{width:39px;padding:5px 1px;font-size:10px}
+  #camera-total{min-width:25px}
+  .control-bar{gap:0}
+  .controls{flex:1;justify-content:space-between;gap:0}
+  .control-bar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;padding:5px 3px;font-size:10px}
+  .control-bar button span{display:block;margin:0;font-size:9px;line-height:1.1}
+  .control-bar button .control-icon{font-size:19px}
+  .separator{display:none}
+  .view-feedback{right:14px;bottom:166px;max-width:calc(100% - 28px)}
+  .help-panel{bottom:166px;max-height:calc(100% - 205px)}
+}
