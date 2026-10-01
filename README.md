@@ -6,7 +6,7 @@ The default Meridian Pavilion is original procedural architecture. An optional
 Houseplant scene is a real photographic capture by Marcel Padilla (CC BY 4.0).
 Both are bundled locally, so exploring them needs no external model host or upload.
 
-LumaField is a substantive adaptation of the MIT-licensed
+LumaField adapts the MIT-licensed
 [antimatter15/splat](https://github.com/antimatter15/splat) renderer by Kevin Kwok.
 See [source provenance and retained credits](THIRD_PARTY.md). The WebGL renderer,
 depth sorting and camera controls remain the foundation of this project.
