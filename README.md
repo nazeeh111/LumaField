@@ -6,6 +6,12 @@ The default Meridian Pavilion is original procedural architecture. An optional
 Houseplant scene is a real photographic capture by Marcel Padilla (CC BY 4.0).
 Both are bundled locally, so exploring them needs no external model host or upload.
 
+[Explore the live Meridian Pavilion](https://nazeeh111.github.io/LumaField/) · [Inspect scene and renderer provenance](THIRD_PARTY.md)
+
+[![LumaField's live viewer with the original Meridian Pavilion procedural scene, scene library, 51,372-Gaussian count and navigation controls](docs/meridian-viewer.png)](https://nazeeh111.github.io/LumaField/)
+
+The preview shows the current source build's seeded procedural Pavilion in its WebGL 2 viewer. It is an idealized scene, not a reconstructed photograph.
+
 LumaField adapts the MIT-licensed
 [antimatter15/splat](https://github.com/antimatter15/splat) renderer by Kevin Kwok.
 See [source provenance and retained credits](THIRD_PARTY.md). The WebGL renderer,
