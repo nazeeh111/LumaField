@@ -23,7 +23,7 @@ converter is `node scripts/convert.mjs` and shares validation with the viewer.
 using deterministic seed 4309. It contains analytic architectural geometry,
 procedural materials, and no photographs, scans, trained models or downloaded
 media. The generator and generated scene are distributed under this repository's
-MIT license. The sidebar thumbnail is CSS geometry, not a source photograph.
+MIT license.
 No third-party font, analytics script, CDN runtime, or hosted demo asset is used.
 
 Upstream's external demonstration scenes are not bundled or required.
