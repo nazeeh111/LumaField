@@ -32,6 +32,43 @@ return {node,change,changeScene,changeCamera,camera,context,events,instance,sett
 function splat(x=0){const b=new ArrayBuffer(32);new Float32Array(b).set([x,0,0,.05,.05,.05]);new Uint8Array(b).set([200,180,150,255,255,128,128,128],24);return b;}
 function near(actual, expected, tolerance=1e-6){assert(Math.abs(actual-expected)<tolerance,`${actual} differs from ${expected}`)}
 function nearMatrix(actual, expected){actual.forEach((value,index)=>near(value,expected[index]));}
+test('orbit shortcut toggles once per press and ignores focus navigation and browser chords',async()=>{
+ const app=await boot();
+ const key=(code,extra={})=>app.events['window:keydown']({target:app.node('canvas'),code,key:code==='KeyP'?'p':'Tab',preventDefault(){},...extra});
+ // Read movement from the actual view, since the minimal DOM does not store attributes.
+ const view=()=>Array.from(vm.runInContext('viewMatrix',app.context));
+ key('KeyP');app.frame(1000);const start=view();app.frame(2000);
+ assert.notDeepEqual(view(),start);
+ key('KeyP',{repeat:true});app.frame(3000);const moving=view();app.frame(4000);
+ assert.notDeepEqual(view(),moving);
+ key('KeyP');app.frame(5000);const stopped=view();app.frame(6000);
+ nearMatrix(view(),stopped);
+ key('KeyP',{ctrlKey:true});app.frame(7000);nearMatrix(view(),stopped);
+ key('KeyP',{metaKey:true});app.frame(8000);nearMatrix(view(),stopped);
+ key('KeyP');app.frame(9000);key('Tab');app.frame(10000);
+ assert.notDeepEqual(view(),stopped);
+});
+
+test('moving focus out of the scene clears held navigation keys',async()=>{
+ const app=await boot();
+ app.events['window:keydown']({target:app.node('canvas'),code:'ArrowUp',key:'ArrowUp',preventDefault(){}});
+ app.frame(1000);
+ app.events['window:focusin']({target:app.node('camera-index')});
+ const before=Array.from(vm.runInContext('viewMatrix',app.context));
+ app.frame(2000);
+ nearMatrix(Array.from(vm.runInContext('viewMatrix',app.context)),before);
+});
+test('both Shift keys retain vertical navigation with Up and Down',async()=>{
+ for(const shift of ['ShiftLeft','ShiftRight'])for(const direction of ['ArrowUp','ArrowDown']){
+  const app=await boot();
+  const pose=()=>Array.from(vm.runInContext('invert4(viewMatrix)',app.context));
+  const before=pose();
+  const key=(code)=>app.events['window:keydown']({target:app.node('canvas'),code,key:code,shiftKey:true,preventDefault(){}});
+  key(shift);key(direction);app.frame(1000);
+  const after=pose(),distance=direction==='ArrowUp'?-.03:.03;
+  for(let axis=0;axis<3;axis++)near(after[12+axis]-before[12+axis],distance*before[4+axis]);
+ }
+});
 test('auto orbit starts at the current view, circles the scene center at steady speed, and resumes without a jump',async()=>{
  const app=await boot();
  app.change({name:'offset.splat',size:32,arrayBuffer:async()=>splat(10)});

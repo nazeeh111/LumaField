@@ -516,10 +516,10 @@ async function main() {
     let currentCameraIndex = 0;
 
     window.addEventListener("keydown", (e) => {
-        if(e.target.closest('button, input, a, select, textarea')) return;
+        if(e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.isComposing || e.target.isContentEditable || e.target.closest('button, input, a, select, textarea')) return;
+        const navigation=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyA','KeyD','KeyQ','KeyE','KeyW','KeyS','KeyI','KeyJ','KeyK','KeyL'].includes(e.code);
         if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
-        if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyA','KeyD','KeyQ','KeyE','KeyW','KeyS','KeyI','KeyJ','KeyK','KeyL'].includes(e.code))markFreeView();
-        if (e.code !== "KeyP") carousel = false;
+        if(navigation) {carousel=false;markFreeView();}
         if (!activeKeys.includes(e.code)) activeKeys.push(e.code);
         if (cameraViewsLoaded && /^[0-9]$/.test(e.key)) {
             const number=e.key==='0'?10:Number(e.key);
@@ -531,18 +531,19 @@ async function main() {
         if (cameraViewsLoaded && ["+", "="].includes(e.key)) {
             selectCameraIndex(currentCameraIndex+1);
         }
-        if (e.code == "KeyV") {
+        if (e.code == "KeyV" && !e.repeat) {
             saveCurrentView();
-        } else if (e.code === "KeyP") {
-            if (!carousel) orbitBaseView = null;
-            carousel = true;
-            markFreeView();
+        } else if (e.code === "KeyP" && !e.repeat) {
+            toggleOrbit();
         }
     });
     window.addEventListener("keyup", (e) => {
         activeKeys = activeKeys.filter((k) => k !== e.code);
     });
     window.addEventListener("blur", () => {
+        activeKeys = [];
+    });
+    window.addEventListener("focusin", () => {
         activeKeys = [];
     });
 
@@ -1061,7 +1062,8 @@ async function main() {
         }
     };
     byId('reset-button').onclick=()=>{camera=fittedCamera;viewMatrix=defaultViewMatrix.slice();resize();carousel=false;currentCameraIndex=cameraViewsLoaded?-1:0;byId('camid').textContent='Free view';updateCameraNavigator();};
-    byId('orbit-button').onclick=()=>{carousel=!carousel;orbitBaseView=null;if(carousel)markFreeView();};
+    function toggleOrbit(){carousel=!carousel;orbitBaseView=null;byId('orbit-button').setAttribute('aria-pressed',String(carousel));if(carousel)markFreeView();}
+    byId('orbit-button').onclick=toggleOrbit;
     async function saveCurrentView() {
         const url=new URL(location.href);
         url.searchParams.set('viewScene',sceneFilename);

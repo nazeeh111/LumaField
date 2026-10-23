@@ -23,7 +23,7 @@
 <main class="stage">
 <div class="stage-bar"><span><span class="live-dot"></span><span id="status" role="status">Preparing your scene</span></span><div class="stage-tags"><label class="scene-picker" for="scene-select"><span>Scene</span><select id="scene-select" aria-label="Choose a bundled scene"><option value="pavilion">Meridian Pavilion</option><option value="houseplant">Houseplant · real capture</option><option id="custom-scene-option" value="" disabled>Current scene</option></select></label><button id="mobile-import" title="Open a local scene">＋ Open file</button><span id="fps">— fps</span></div></div>
 <div class="viewport" id="viewport">
-<canvas id="canvas" aria-label="Interactive 3D Gaussian splat scene" tabindex="0"></canvas>
+<canvas id="canvas" aria-label="Interactive 3D Gaussian splat scene. Arrow keys move; W A S D look; P toggles auto orbit. See Controls for more." tabindex="0"></canvas>
 <div class="viewport-title"><span class="small-label" id="scene-type-label">PROCEDURAL SCENE</span><h2 id="viewport-name">Meridian<br>Pavilion</h2><p id="viewport-subtitle">Original procedural architecture.</p><p id="scene-credit" hidden>Capture by <a href="https://marcelpadilla.com/Gaussian_Splat_Object_Dataset/" target="_blank" rel="noreferrer">Marcel Padilla</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC BY 4.0</a></p></div>
 <div id="spinner" class="loading"><span></span><p id="loading-text">Opening the pavilion…</p></div>
 <div id="message" role="alert" hidden></div><div id="progress"></div>
