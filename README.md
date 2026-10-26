@@ -4,16 +4,11 @@ Explore Gaussian splat scenes in your browser. Orbit the Pavilion, switch to a
 photographic Houseplant capture, or open your own `.splat` or binary `.ply` file.
 Local files stay on your device.
 
-[Explore the live Meridian Pavilion](https://nazeeh111.github.io/LumaField/) · [Inspect scene and renderer provenance](THIRD_PARTY.md)
+[Explore the live Meridian Pavilion](https://nazeeh111.github.io/LumaField/)
 
 [![LumaField's live viewer with the original Meridian Pavilion procedural scene, scene library, 51,372-Gaussian count and navigation controls](docs/meridian-viewer.png)](https://nazeeh111.github.io/LumaField/)
 
 The preview shows the seeded Meridian Pavilion in the WebGL 2 viewer: original procedural architecture, not a reconstructed photograph. Houseplant is a real photographic capture by Marcel Padilla (CC BY 4.0). Both are bundled locally and need no external model host or upload.
-
-LumaField adapts the MIT-licensed
-[antimatter15/splat](https://github.com/antimatter15/splat) renderer by Kevin Kwok.
-See [source provenance and retained credits](THIRD_PARTY.md). The WebGL renderer,
-depth sorting and camera controls remain the foundation of this project.
 
 ## Run
 

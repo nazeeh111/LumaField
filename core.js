@@ -15,7 +15,8 @@ export function validateSplat(buffer) {
             if(!finite(f[i*8+j]) || Math.abs(f[i*8+j])>10000) throw new Error(`Invalid position at splat ${i}: coordinates must be finite and within ±10,000.`);
             if(!finite(f[i*8+j+3]) || f[i*8+j+3]<=0 || f[i*8+j+3]>64) throw new Error(`Invalid scale at splat ${i}: each scale must be in (0, 64].`);
         }
-        if(b.slice(i*32+28,i*32+32).every(v=>v===128)) throw new Error(`Invalid rotation at splat ${i}: zero quaternion.`);
+        const rotation = i * 32 + 28;
+        if(b[rotation]===128 && b[rotation+1]===128 && b[rotation+2]===128 && b[rotation+3]===128) throw new Error(`Invalid rotation at splat ${i}: zero quaternion.`);
     }
     return count;
 }

@@ -5,17 +5,9 @@ renderer, based on upstream commit `ba182b51b7c2ad5738cdd6741cd63336d27470fb`.
 The original project is distributed under the MIT license. Its copyright notice
 and permission terms are retained without modification in [LICENSE](LICENSE).
 
-The WebGL shaders, Gaussian covariance construction, counting-sort worker,
-camera matrix math, and mouse, touch, keyboard and gamepad navigation derive
-from that implementation. LumaField adds a new interface, local scene workflow,
-validated import boundaries, a modular worker, reliable loading, regression
-checks, an original procedural scene, and static hosting support. This is a
-viewer adaptation, not an independently invented splat rendering algorithm.
-
-The original README, including its technical explanation and acknowledgements,
-is preserved in [docs/UPSTREAM_README.md](docs/UPSTREAM_README.md). The original
-Python converter is also retained as `convert.py`; the maintained dependency-free
-converter is `node scripts/convert.mjs` and shares validation with the viewer.
+The renderer, depth sorting, camera math and navigation derive from that source.
+The retained `convert.py` is the upstream converter; the maintained converter is
+`node scripts/convert.mjs`.
 
 ## Bundled scene and interface
 

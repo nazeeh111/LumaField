@@ -18,6 +18,15 @@ test('nonfinite position rejected',()=>assert.throws(()=>convertPly(ply({values:
 test('empty and partial splat records rejected',()=>{for(const n of [0,1,31,33])assert.throws(()=>validateSplat(new ArrayBuffer(n)),/32-byte/);});
 test('nonfinite and excessive scale rejected',()=>{for(const value of [NaN,Infinity,-1,1000]){const b=splat();new Float32Array(b)[3]=value;assert.throws(()=>validateSplat(b),/scale/);}});
 test('zero quaternion rejected',()=>{const b=splat();new Uint8Array(b).fill(128,28);assert.throws(()=>validateSplat(b),/rotation/);});
+test('each quaternion component can be nonzero and errors identify the invalid record',()=>{
+ const records=new Uint8Array(64);records.set(new Uint8Array(splat()));records.set(new Uint8Array(splat()),32);
+ for(let component=0;component<4;component++) for(const value of [0,127,129,255]) {
+  records.fill(128,60);records[60+component]=value;
+  assert.equal(validateSplat(records.buffer),2);
+ }
+ records.fill(128,60);
+ assert.throws(()=>validateSplat(records.buffer),{message:'Invalid rotation at splat 1: zero quaternion.'});
+});
 test('camera import validates focal and rotation',()=>{const c={position:[0,0,-5],rotation:[[1,0,0],[0,1,0],[0,0,1]],fx:700,fy:700,width:1000,height:700};assert.equal(validateCameras([c]).length,1);assert.throws(()=>validateCameras([{...c,fx:0}]),/focal/i);assert.throws(()=>validateCameras([{...c,rotation:[[0,0,0],[0,0,0],[0,0,0]]}]),/rotation/i);});
 test('view hash requires finite invertible matrix',()=>{assert.throws(()=>validateView([1,2,3]),/view/i);assert.throws(()=>validateView(Array(16).fill(0)),/view/i);});
 test('unknown Content-Length streams are assembled',async()=>{const bytes=new Uint8Array(splat());const r=new Response(new ReadableStream({start(c){c.enqueue(bytes.slice(0,5));c.enqueue(bytes.slice(5));c.close();}}));assert.deepEqual(new Uint8Array(await readResponse(r)),bytes);});
