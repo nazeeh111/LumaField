@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960" role="img" aria-labelledby="title desc">
+<title id="title">LumaField scene import: validate, check the current request, then activate</title>
+<desc id="desc">The loaded scene remains visible while a candidate file is converted and validated. Invalid input reports an error. An accepted result from an outdated request is ignored. Only a valid, current result is explicitly activated in the worker. This is a schematic, not a rendered scene or a guarantee of GPU recovery.</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="none" stroke="#d8a57c" stroke-width="1.4"/></marker></defs>
+<rect width="720" height="960" fill="#15191d"/>
+<g font-family="Arial, Helvetica, sans-serif" fill="#f1eee7">
+<text x="40" y="47" font-size="15" letter-spacing="3" fill="#d8a57c">LUMAFIELD / INSIDE THE VIEWER</text>
+<text x="40" y="97" font-size="34" font-weight="700">Validate before switching.</text>
+<text x="40" y="133" font-size="22" fill="#b9bfc5">A proposed scene is not the active scene.</text>
+<g id="loaded-scene"><rect x="40" y="176" width="274" height="202" rx="3" fill="#20272d" stroke="#59616a"/>
+<path d="M55 344L295 344M55 344L170 228L295 344" stroke="#58636c" stroke-width="1" fill="none"/>
+<g fill="#b9cad0" opacity="0.45"><ellipse cx="122" cy="292" rx="44" ry="17" transform="rotate(-35 122 292)"/><ellipse cx="191" cy="276" rx="39" ry="20" transform="rotate(24 191 276)"/><ellipse cx="190" cy="315" rx="57" ry="14"/><ellipse cx="141" cy="255" rx="21" ry="11"/></g>
+<text x="59" y="210" font-size="23" font-weight="700">Loaded scene</text>
+<text x="40" y="415" font-size="22" fill="#b9bfc5">Stays visible while the</text><text x="40" y="445" font-size="22" fill="#b9bfc5">new input is prepared.</text></g>
+<g id="candidate"><path d="M451 178H544L578 212V277H451Z" fill="#272c30" stroke="#d8a57c" stroke-width="2"/><path d="M544 178V212H578" fill="none" stroke="#d8a57c" stroke-width="2"/>
+<text x="514" y="248" text-anchor="middle" font-size="24">New file</text><text x="514" y="309" text-anchor="middle" font-size="22" fill="#b9bfc5">.splat / binary .ply</text></g>
+<path id="prepare-arrow" d="M514 328V362" stroke="#d8a57c" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+<text x="514" y="398" text-anchor="middle" font-size="25" font-weight="700">Convert + validate</text><text x="514" y="430" text-anchor="middle" font-size="21" fill="#b9bfc5">Worker checks the input</text>
+<path id="invalid-branch" d="M407 397H359V510H314" stroke="#d8a57c" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+<g id="invalid-outcome"><text x="40" y="508" font-size="24" fill="#e1b996">Invalid input</text><text x="40" y="540" font-size="22">Show error; keep scene.</text></g>
+<path id="valid-arrow" d="M514 451V481" stroke="#d8a57c" stroke-width="2" marker-end="url(#arrow)" fill="none"/>
+<g id="current-request"><path d="M514 494L605 554L514 614L423 554Z" fill="#252b30" stroke="#d8a57c" stroke-width="2"/><text x="514" y="532" text-anchor="middle" font-size="21">Still the</text><text x="514" y="556" text-anchor="middle" font-size="21">latest</text><text x="514" y="581" text-anchor="middle" font-size="21">request?</text></g>
+<path id="stale-branch" d="M423 554H359V620H314" stroke="#d8a57c" stroke-width="2" marker-end="url(#arrow)" fill="none"/><text x="374" y="545" font-size="18" fill="#b9bfc5">no</text>
+<g id="stale-outcome"><text x="40" y="616" font-size="24" fill="#e1b996">Outdated result</text><text x="40" y="648" font-size="22">Ignore; keep scene.</text></g>
+<path id="activation-arrow" d="M514 614V695" stroke="#d8a57c" stroke-width="2" marker-end="url(#arrow)" fill="none"/><text x="534" y="657" font-size="19" fill="#b9bfc5">yes</text>
+<g id="activation"><path d="M40 714H680" stroke="#515a63"/><text x="40" y="759" font-size="29" font-weight="700">Activate the accepted scene.</text><text x="40" y="800" font-size="23">UI confirms the request; worker switches data,</text><text x="40" y="833" font-size="23">then prepares textures and the drawing order.</text></g>
+<text x="40" y="906" font-size="18" fill="#a7afb7">Schematic of import control flow, not GPU failure recovery.</text><text x="40" y="934" font-size="17" fill="#a7afb7">Source: main.js · worker.js · core.js</text>
+</g></svg>

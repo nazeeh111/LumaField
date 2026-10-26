@@ -54,6 +54,16 @@ bytes are bounded before scene conversion. Local import cancels a pending fetch.
 Invalid imports leave the previously loaded scene available. A copied view link
 for a remote scene depends on that remote file remaining available.
 
+## How a scene becomes active
+
+![LumaField scene handoff: convert and validate a proposed file, ignore outdated results, and activate only a valid current request. Invalid input keeps the loaded scene.](docs/scene-handoff.svg)
+
+The worker validates a proposed scene before the UI confirms it is still the
+latest request. Invalid input shows an error; an outdated result is ignored.
+The loaded scene stays visible while the new input is prepared. Activation then
+switches worker data and prepares its textures and drawing order. This import
+safeguard does not guarantee recovery from a graphics-context or GPU failure.
+
 ## Supported formats and limits
 
 | Input | Contract |
